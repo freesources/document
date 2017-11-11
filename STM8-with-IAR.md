@@ -1,0 +1,184 @@
+#Hướng dẫn cài đặt IAR lập trình STM8
+
+Link download: [IAR-IDE](https://www.iar.com/iar-embedded-workbench/#!?currentTab=free-trials)
+
+Crack: [Crack](http://codientu.org/attachments/31898/)
+
+Sau khi download IAR-IDE về cài đặt bình thường. Sau khi cài đặt xong, đừng vội mở IAR lên. Tiếp tục download file Crack về rồi giải nén. Copy 4 file trong thư mục đó vào đường dẫn: *"C:\Program Files\IAR Systems\Embedded Workbench 6.5\common\bin"* nhớ lựa chọn *copy and replace*. Sau đó chạy file __iccstm8.exe__ nữa là OK rồi đó.
+
+
+#Tạo một project với IAR
+
+Video: [video](https://www.youtube.com/watch?v=s02f3nP_efM)
+
+#Thư viện STM8S003F3 và STM8S003K3
+
+bao gồm: 
+
+- stm8s_adc1
+- stm8s_awu
+- stm8s_beep
+- stm8s_clk
+- stm8s_exti
+- stm8s_flash
+- stm8s_gpio
+- stm8s_i2c
+- stm8s_itc
+- stm8s_iwdg
+- stm8s_rst
+- stm8s_spi
+- stm8s_tim1
+- stm8s_tim2
+- stm8s_tim4
+- stm8s_uart1
+- stm8s_wwdg
+
+###Thư viện GPIO
+
+####Các hàm xử lý GPIO của stm8s nằm trong file stm8s_gpio.h:
+
+- void GPIO_DeInit(GPIOx)  _//thiết lập các thanh ghi của GPIO về cấu hình cơ bản_
+
+- void GPIO_ ExternalPullUpConfig(GPIOx, GPIO_ PIN_ x, NewState) _//cấu hình trở treo pull-up_
+
+GPIOx là các GPIOA, GPIOB,...
+
+GPIO_ PIN_ x với x = 0 -> 7.
+
+**NewState** : DISABLE, ENABLE.
+
+- void GPIO_ Init(GPIOx, GPIO_ Pin_ z, GPIO_ Mode) _*//khởi tạo cấu hình các chân GPIO*_
+
+**GPIO_Mode:**
+
+GPIO_ MODE_ IN_FL_ NO_ IT = (uint8_t)0x00; _*// Input floating, no external interrupt*_
+
+GPIO_ MODE_ IN_ PU_ NO_ IT = (uint8_t)0x40; _*// Input pull-up, no external interrupt*_
+
+GPIO_ MODE_ IN_ FL_ IT = (uint8_t)0x20; _*//Input floating, external interrupt*_
+
+GPIO_ MODE_ IN_ PU_ IT = (uint8_t)0x60; _*//Input pull-up, external interrupt*_
+
+GPIO_ MODE_ OUT_ OD_ LOW_ FAST = (uint8_t)0xA0; _*// Output open-drain, low level, 10MHz*_
+
+GPIO_ MODE_ OUT_ PP_ LOW_ FAST = (uint8_t)0xE0; _*//  Output push-pull, low level, 10MHz*_
+
+GPIO_ MODE_ OUT_ OD_ LOW_ SLOW = (uint8_t)0x80; _*//  Output open-drain, low level, 2MHz*_
+
+GPIO_ MODE_OUT_ PP_ LOW_ SLOW = (uint8_t)0xC0; _*// Output push-pull, low level, 2MHz*_
+
+GPIO_ MODE_ OUT_ OD_ HIZ_ FAST = (uint8_t)0xB0; _*//Output open-drain, high-impedance level,10MHz*_
+
+GPIO_ MODE_ OUT_ OD_ HIGH_ FAST = (uint8_t)0xF0; _*//Output push-pull, high level, 10MHz*_
+
+GPIO_ MODE_ OUT_ OD_ HIZ_ SLOW = (uint8_t)0x90; _*//Output open-drain, high-impedance level, 2MHz*_
+
+GPIO_ MODE_ OUT_ OD_ HIGH_ SLOW = (uint8_t)0xD0; _*//Output push-pull, high level, 2MHz*_
+
+uint8_t GPIO_ ReadInputData(GPIOx); _*Đọc giá trị trên Port x*_
+
+BitStatus GPIO_ ReadInputPin(GPIOx, GPIO_ Pin); _*Đọc giá trị chân Pin_x Port_x*_
+
+uint8_t GPIO_ ReadOutputData(GPIO_ TypeDef* GPIOx); _*Đọc giá trị xuất ra trên Port x x = A đến I*_
+
+void GPIO_ Write(GPIO_ TypeDef *GPIOx, uint8_t PortPins) _*Xuất giá trị PortVal ra Portx*_
+
+void GPIO_ WriteHigh(GPIO_ TypeDef *GPIOx, GPIO_ Pin_ TypeDef PortPins) _*Xuất mức cao ra Pin*_
+
+void GPIO_ WriteLow(GPIO_ TypeDef *GPIOx, GPIO_ Pin_ TypeDef PortPins) _*Xuất mức thấp ra Pin*_
+
+void GPIO_ WriteReverse(GPIO_ TypeDef *GPIOx, GPIO_ Pin_ TypeDef PortPins)   *Đảo trạng thái Pin*
+
+
+###Xung clock trong STM8S003 - thư viện cấu hình sao động stm8s_clk.c và stm8s_clk.h
+
+- nguồn dao động thạch anh ngoài tốc độ cao từ 1 - 16Mhz (HSE: high speed external)
+- nguồn dao động ngoài tốc độ cao từ máy phát dao động lên tới 16Mhz (HSE user Ext)
+- Nguồn dao động nội  RC tốc độ cao HSI (high speed internal)
+- Nguồn dao dộng nội RC tốc độ thấp LSI (low speed internal)
+
+Tần số tối đa là 16Mhz, với các ứng dụng đơn giản tối thiểu ít dùng thạch anh ngoài, đối với các ứng dụng đòi hỏi độ chính xác cao như đo tần số nên sử dụng thạch anh ngoài.
+
+**Cấu hình tần số dao động nội:**
+
+- CLK_DeInit(); _*//reset các thanh ghi clok*_
+
+- CLK_ HSIPrescalerConfig(CLK_ PRESCALER_ HSIDIV8); *// f_Master = HSI/8 = 16/2 = 2Mhz*
+
+- CLK_ SYSCLKConfig(CLK_ PRESCALER_ CPUDIV2); *// f_CPU = f_Master/2 = 1Mhz*
+
+**while(CLK_ GetFlagStatus(CLK_ FLAG_ HSIRDY)!=SET);** *//Đợi HSI ổn định*
+
+
+###Ngắt ngoài với thư viện stm8s_gpio.c và stm8s_exti.c
+
+- GPIO_ Init(GPIOD, GPIO_ PIN_3, GPIO_ MODE_ IN_ PU_ IT); *//chân PD3 là chân vào trở kéo lên và có ngắt ngoài*
+
+- EXTI_ SetExtIntSensitivity(EXTI_ PORT_ GPIOD, EXTI_ SENSITIVITY_ FALL_ ONLY); *//chỉ cho phép ngắt sườn xuống ở port PD*
+
+**enableInterrupts();** *//kích hoạt ngắt*
+
+**Xử lý ngắt**
+
+INTERRUPT_HANDLER(EXTI_PORTD_IRQHandler, 3)
+{
+
+}
+
+>>*một 1 Port có thể có nhiều ngắt xảy ra nên cần kiểm tra từng chân với hàm GPIO_ReadInputPin() nếu =0  thì thực hiện.*
+
+###Thư viện Timer4 stm8s_tim4
+
+- TIM4_ TimeBaseInit(TIM4_ PRESCALER_ 128, 125); _*//TIM4_PRESCALER_128 là tần số chi với F_Master, ở chế độ thông thường k cài đặt gì thì f_Master = 2 Mhz. 125 là số đếm, đếm đến 125 xảy ra ngắt*_
+
+- TIM4_ClearFlag(TIM4_FLAG_UPDATE); _Xóa cờ update_
+
+- TIM4_ITConfig(TIM4_IT_UPDATE, ENABLE); _Kích hoạt ngắt update:_
+
+>>Kích hoạt ngắt: 
+
+>>**enableInterrupts();**
+
+TIM4_Cmd(ENABLE); _Kích hoạt Timer 4_
+
+>> Ngắt khi đếm đến giá trị đặt trước
+
+**Xử lý ngắt:**
+
+INTERRUPT_HANDLER(TIM4_UPD_OVF_IRQHandler, 23)
+
+{
+
+	//Clear Interrupt Pending bit
+	TI4_ClearITPendingBit(TIM4_IT_UPDATE);
+
+}
+
+###Thư viện stm8s_uart1
+
+Để sử dụng UART trong STM8S cần add 2 thư viện: stm8s_uart1.c và stm8s_clk.c
+
+####Các hàm trong thư viện stm8s_uart1.c
+
+- void UART1_DeInit(); _//reset các giá trị thanh ghi về mặc định_
+
+- void UART1_ Init(uint32_ t BaudRate, UART1_ WordLength_ TypeDef WordLength, 
+                UART1_ StopBits_ TypeDef StopBits, UART1_ Parity_ TypeDef Parity, 
+                UART1_ SyncMode_ TypeDef SyncMode, UART1_ Mode_ TypeDef Mode)
+
+>> với __BaudRate__ là tốc độ truyền, __WordLength__ là độ dài byte truyền, __StopBits__, __Parity__, __SyncMode__ Chế độ truyền, __Mode__ kiểu truyền.
+
+__Sync Mode:__ UART1_ SYNCMODE_ CLOCK_ CLOCK_ DISABLE: _chế độ truyền không đồng bộ_
+
+__Mode__: 
+
+UART1_ MODE_ RX_ ENABLE 0x80 _//chỉ nhận dữ liệu_
+
+UART1_ MODE_ TX_ ENABLE 0x04 _// chỉ truyền dữ liệu_
+
+UART1_ MODE_ RX_ DISABLE 0x40 _//disable đường nhận dữ liệu (chỉ có truyền)_
+
+UART1_ MODE_ TXRX _ ENABLE 0x0C _//kích hoạt cả đường Tx và Rx_
+
+>>VD: UART1_ Init((uint32_ t)9600, UART1_WORDLENGTH_ 8D, UART1_ STOPBITS_ 1, UART1_ PARITY_ NO, UART1_ SYNCMODE_ CLOCK_ DISABLE, UART1_ MODE_ TXRX_ ENABLE); _tốc độ truyền 9600, độ dài dữ liệu 8 bit, sử dụng 1 bit stop, không parity, chế độ truyền không đồng bộ, Mode truyền nhận dữ liệu_ 
+
